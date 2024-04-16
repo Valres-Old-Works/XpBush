@@ -30,6 +30,10 @@ class XpBush extends CustomBush
         return parent::onInteract($item, $face, $clickVector, $player, $returnedItems);
     }
 
+    public function getDrops(Item $item): array {
+        return [CustomiesItemFactory::getInstance()->get("minecraft:xp_berry")->setCount($this->getBerryDropAmount())];
+    }
+
     public function getFrictionFactor(): float {
         return 0.4;
     }

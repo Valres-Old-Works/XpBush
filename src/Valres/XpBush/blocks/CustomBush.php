@@ -8,6 +8,7 @@ use pocketmine\block\BlockTypeIds;
 use pocketmine\block\BlockTypeTags;
 use pocketmine\block\Dirt;
 use pocketmine\block\Flowable;
+use pocketmine\block\Grass;
 use pocketmine\block\utils\FortuneDropHelper;
 use pocketmine\entity\Entity;
 use pocketmine\entity\Living;
@@ -47,14 +48,16 @@ class CustomBush extends Flowable
     }
 
     public function onInteract(Item $item, int $face, Vector3 $clickVector, ?Player $player = null, array &$returnedItems = []) : bool {
-        if($this->stage < $this->laststage && $item instanceof Fertilizer){
-            $block = clone $this;
-            $block->stage ++;
-
-            $ev = new BlockGrowEvent($this, $block, $player);
+        if($item instanceof Fertilizer and !$this->IsMaxStage()){
+            if($player instanceof Player and !$player->isCreative()){
+                $player->getInventory()->setItemInHand($player->getInventory()->getItemInHand()->setCount($player->getInventory()->getItemInHand()->getCount()-1));
+            }
+            $ev = new BlockGrowEvent($this, $this->getNewStateBlock());
             $ev->call();
-
-            if(!$ev->isCancelled()) $item->pop();
+            if(!$ev->isCancelled()){
+                $this->position->getWorld()->setBlock($this->position, $this->getNewStateBlock());
+                $this->stage = $this->stage+1;
+            }
         }
         return true;
     }
@@ -71,7 +74,7 @@ class CustomBush extends Flowable
     }
 
     public function onNearbyBlockChange() : void {
-        if(!$this->getSide(Facing::DOWN) instanceof Dirt){
+        if(!$this->getSide(Facing::DOWN) instanceof Dirt and !$this->getSide(Facing::DOWN) instanceof Grass){
             $this->position->getWorld()->useBreakOn($this->position);
         }
     }
@@ -81,7 +84,7 @@ class CustomBush extends Flowable
     }
 
     public function onRandomTick() : void {
-        if(!$this->IsMaxStage() && mt_rand(0, 2) === 1 ){
+        if(!$this->IsMaxStage() && mt_rand(0, 2) === 1){
             $ev = new BlockGrowEvent($this, $this->getNewStateBlock());
             $ev->call();
             if(!$ev->isCancelled()){
